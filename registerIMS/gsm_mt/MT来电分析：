@@ -1,0 +1,74 @@
+1. 来电
+./radio_gsm_mt.log:2775:09-27 15:14:06.579   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state SETUP for conn id 1
+./radio_gsm_mt.log:2776:09-27 15:14:06.579   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_voip_create_call_info_entry: Created call info entry 0x7f72469c00 with call android id 1, qmi id 1, media id -1
+./radio_gsm_mt.log:2778:09-27 15:14:06.581  2249  2312 D RILJ    : Unsol response received for UNSOL_CALL_RING Sending ack to ril.cpp [SUB1]
+./radio_gsm_mt.log:2779:09-27 15:14:06.581  2249  2312 D RILJ    : [UNSL]< UNSOL_CALL_RING [C@59b6814 [SUB1]
+./radio_gsm_mt.log:2780:09-27 15:14:06.583   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: RILVIMS: update 1 calls[uncached qmi call id 1, call state 10]
+2785:09-27 15:14:06.590  2249  2249 D Phone   : Event EVENT_CALL_RING Received state=IDLE
+
+./radio_gsm_mt.log:2794:09-27 15:14:07.412  2249  2312 D RILJ    : Unsol response received for UNSOL_RESPONSE_CALL_STATE_CHANGED Sending ack to ril.cpp [SUB1]
+./radio_gsm_mt.log:2795:09-27 15:14:07.412  2249  2312 D RILJ    : [UNSL]< UNSOL_RESPONSE_CALL_STATE_CHANGED [SUB1]
+./radio_gsm_mt.log:2796:09-27 15:14:07.413  2249  2249 D RILJ    : [4507]> GET_CURRENT_CALLS [SUB1]
+
+./radio_gsm_mt.log:2797:09-27 15:14:07.420   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state INCOMING for conn id 1
+./radio_gsm_mt.log:2798:09-27 15:14:07.423   939   989 I RILQ    : (1/939):RIL[1][main] qcril_qmi_get_call_list_to_send: RILVI: calls rep:[qmi call id 1, android call id 1, qmi call state 2] reported/skipped 1/0 calls
+2804:09-27 15:14:07.427  2249  2312 D RILJ    : [4507]< GET_CURRENT_CALLS {[id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3] } [SUB1]
+2805:09-27 15:14:07.431  2249  2249 D GsmCdmaCallTracker: Event EVENT_POLL_CALLS_RESULT Received
+
+2819:09-27 15:14:07.444  2249  2312 D RILJ    : [4509]< GET_CURRENT_CALLS {[id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3] } [SUB1]
+2820:09-27 15:14:07.445  2249  2249 D GsmCdmaCallTracker: Event EVENT_POLL_CALLS_RESULT Received
+2821:09-27 15:14:07.446  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] pendingMo=null, dc=id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3
+2826:09-27 15:14:07.456  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] Notify new ring id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3
+2827:09-27 15:14:07.456  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=IDLE new=RINGING
+2834:09-27 15:14:07.551  2249  2249 D QtiGsmDCT: [1]onVoiceCallStarted
+
+2900:09-27 15:14:09.592  2249  2249 D Phone   : Event EVENT_CALL_RING_CONTINUE Received state=RINGING
+2903:09-27 15:14:12.596  2249  2249 D Phone   : Event EVENT_CALL_RING_CONTINUE Received state=RINGING
+
+接听：
+2906:09-27 15:14:14.519  2249  2249 I phone   : acceptCall: incoming...
+./radio_gsm_mt.log:2907:09-27 15:14:14.520  2249  2249 D RILJ    : [4526]> SET_MUTE false [SUB1]
+./radio_gsm_mt.log:2908:09-27 15:14:14.532  2249  2249 D RILJ    : [4527]> ANSWER [SUB1]
+./radio_gsm_mt.log:2909:09-27 15:14:14.534  2249  2312 D RILJ    : [4526]< SET_MUTE  [SUB1]
+
+接通：
+./radio_gsm_mt.log:2913:09-27 15:14:14.868   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state CONVERSATION for conn id 1
+./radio_gsm_mt.log:2914:09-27 15:14:14.870  2249  2312 D RILJ    : [4527]< ANSWER  [SUB1]
+./radio_gsm_mt.log:2915:09-27 15:14:14.871  2249  2249 D RILJ    : [4529]> GET_CURRENT_CALLS [SUB1]
+./radio_gsm_mt.log:2916:09-27 15:14:14.875  2249  2312 D RILJ    : Unsol response received for UNSOL_RESPONSE_CALL_STATE_CHANGED Sending ack to ril.cpp [SUB1]
+./radio_gsm_mt.log:2917:09-27 15:14:14.876  2249  2312 D RILJ    : [UNSL]< UNSOL_RESPONSE_CALL_STATE_CHANGED [SUB1]
+./radio_gsm_mt.log:2918:09-27 15:14:14.877  2249  2249 D RILJ    : [4531]> GET_CURRENT_CALLS [SUB1]
+./radio_gsm_mt.log:2919:09-27 15:14:14.879   939   989 I RILQ    : (1/939):RIL[1][main] qcril_qmi_get_call_list_to_send: RILVI: calls rep:[qmi call id 1, android call id 1, qmi call state 3] reported/skipped 1/0 calls
+
+
+09-27 15:14:14.882  2249  2249 D GsmCdmaCallTracker: Event EVENT_POLL_CALLS_RESULT Received
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn] parent= INCOMING, newParent= IDLE
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn]  mNumberConverted false
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn] --dssds----null
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn] update: parent=ACTIVE, hasNewParent=false, wasConnectingInOrOut=true, wasHolding=false, isConnectingInOrOut=false, changed=true
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn] onConnectedInOrOut: connectTime=1506496454883
+09-27 15:14:14.883  2249  2249 D GsmCdmaConnection: [GsmCdmaConn] releaseWakeLock
+09-27 15:14:14.886  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=RINGING new=OFFHOOK
+
+09-27 15:14:15.597  2249  2249 D Phone   : Event EVENT_CALL_RING_CONTINUE Received state=OFFHOOK
+
+对端挂断：
+./radio_gsm_mt.log:3082:09-27 15:14:29.030   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state DISCONNECTING for conn id 1
+./radio_gsm_mt.log:3087:09-27 15:14:29.310   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state END for conn id 1
+./radio_gsm_mt.log:3088:09-27 15:14:29.311   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_map_qmi_to_ril_last_call_failure_cause: map qmi reason: 145 to ril reason: 16
+09-27 15:14:29.311   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_map_qmi_to_ril_last_call_failure_cause: ril reason str: Normal call clearing
+09-27 15:14:29.317  2249  2312 D RILJ    : Unsol response received for UNSOL_RESPONSE_CALL_STATE_CHANGED Sending ack to ril.cpp [SUB1]
+09-27 15:14:29.317  2249  2312 D RILJ    : [UNSL]< UNSOL_RESPONSE_CALL_STATE_CHANGED [SUB1]
+09-27 15:14:29.317  2249  2249 D RILJ    : [4556]> GET_CURRENT_CALLS [SUB1]
+09-27 15:14:29.324   939   989 I RILQ    : (1/939):RIL[1][main] qcril_qmi_get_call_list_to_send: RILVI: calls rep: reported/skipped 0/1 calls
+09-27 15:14:29.329  2249  2312 D RILJ    : [4556]< GET_CURRENT_CALLS {} [SUB1]
+09-27 15:14:29.330  2249  2249 D GsmCdmaCallTracker: Event EVENT_POLL_CALLS_RESULT Received
+09-27 15:14:29.331  2249  2249 D RILJ    : [4557]> LAST_CALL_FAIL_CAUSE [SUB1]
+09-27 15:14:29.334  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=OFFHOOK new=OFFHOOK
+09-27 15:14:29.338  2249  2312 D RILJ    : [4557]< LAST_CALL_FAIL_CAUSE com.android.internal.telephony.LastCallFailCause@932f25b causeCode: 16 vendorCause: Normal call clearing [SUB1]
+09-27 15:14:29.339  2249  2249 D GsmCdmaConnection: onDisconnect: cause=2
+09-27 15:14:29.343  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=OFFHOOK new=IDLE
+09-27 15:14:29.359  2249  2249 D QtiGsmDCT: [1]onVoiceCallEnded
+09-27 15:14:29.360  2249  2249 D PhoneSwitcher: handle event - 108
+09-27 15:14:29.360  2249  2249 D PhoneSwitcher: EVENT_VOICE_CALL_ENDED
+09-27 15:14:29.362  2249  2249 D PhoneSwitcher: isAnyVoiceCallActiveOnDevice: false

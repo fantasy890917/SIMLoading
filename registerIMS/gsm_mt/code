@@ -1,0 +1,58 @@
+1.来电时，modem上报RIL_UNSOL_CALL_RING消息到RIL
+log :./radio_gsm_mt.log:2779:09-27 15:14:06.581  2249  2312 D RILJ    : [UNSL]< UNSOL_CALL_RING [C@59b6814 [SUB1]
+RIL.java
+            case RIL_UNSOL_CALL_RING:
+                if (RILJ_LOGD) unsljLogRet(response, ret);
+
+                if (mRingRegistrant != null) {
+                    mRingRegistrant.notifyRegistrant(
+                            new AsyncResult (null, ret, null));
+                }
+                break;
+mRingRegistrant是在BaseCommands.java中定义
+    public void setOnCallRing(Handler h, int what, Object obj) {
+        mRingRegistrant = new Registrant (h, what, obj);
+    }
+    
+2. 在Phone.java注册的监听
+log:
+09-27 15:14:06.590  2249  2249 D Phone   : Event EVENT_CALL_RING Received state=IDLE
+09-27 15:14:06.590  2249  2249 D Phone   : Sending notifyIncomingRing
+代码：
+mCi.setOnCallRing(this, EVENT_CALL_RING, null);
+
+            case EVENT_CALL_RING:
+                Rlog.d(LOG_TAG, "Event EVENT_CALL_RING Received state=" + getState());
+                ar = (AsyncResult)msg.obj;
+                if (ar.exception == null) {
+                    PhoneConstants.State state = getState();
+                    if ((!mDoesRilSendMultipleCallRing)
+                            && ((state == PhoneConstants.State.RINGING) ||
+                                    (state == PhoneConstants.State.IDLE))) {
+                        mCallRingContinueToken += 1;
+                        sendIncomingCallRingNotification(mCallRingContinueToken);
+                    } else {
+                        notifyIncomingRing();
+                    }
+                }
+                break;
+ sendIncomingCallRingNotification方法
+    private void sendIncomingCallRingNotification(int token) {
+        if (mIsVoiceCapable && !mDoesRilSendMultipleCallRing &&
+                (token == mCallRingContinueToken)) {
+            Rlog.d(LOG_TAG, "Sending notifyIncomingRing");
+            notifyIncomingRing();
+            sendMessageDelayed(
+                    obtainMessage(EVENT_CALL_RING_CONTINUE, token, 0), mCallRingDelay);
+        } else {
+            Rlog.d(LOG_TAG, "Ignoring ring notification request,"
+                    + " mDoesRilSendMultipleCallRing=" + mDoesRilSendMultipleCallRing
+                    + " token=" + token
+                    + " mCallRingContinueToken=" + mCallRingContinueToken
+                    + " mIsVoiceCapable=" + mIsVoiceCapable);
+        }
+    }
+    
+3.CallManager.java注册Phone 来电监听：
+phone.registerForIncomingRing(handler, EVENT_INCOMING_RING,
+                mRegistrantidentifier);
