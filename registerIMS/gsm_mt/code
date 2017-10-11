@@ -53,6 +53,204 @@ mCi.setOnCallRing(this, EVENT_CALL_RING, null);
         }
     }
     
-3.CallManager.java注册Phone 来电监听：
+3.CallManager.java registerForPhoneStates()方法注册Phone 来电监听(CallManager初始化是在PhoneGlobals.onCreate())：
 phone.registerForIncomingRing(handler, EVENT_INCOMING_RING,
                 mRegistrantidentifier);
+在PhoneGlobals.onCreate()方法中：
+mCM = CallManager.getInstance();
+            for (Phone phone : PhoneFactory.getPhones()) {
+                mCM.registerPhone(phone);
+            }
+CallManager.java registerPhone方法调用registerForPhoneStates()方法
+内部类CallManagerHandler对EVENT_INCOMING_RING的处理：
+case EVENT_INCOMING_RING:
+                    if (VDBG) Rlog.d(LOG_TAG, " handleMessage (EVENT_INCOMING_RING)");
+                    // The event may come from RIL who's not aware of an ongoing fg call
+                    if (!hasActiveFgCall()) {
+                        mIncomingRingRegistrants.notifyRegistrants((AsyncResult) msg.obj);
+                    }
+                    break;
+由于没有其他代码注册callManager.java的registerForIncomingRing方法，因此这部分通知不会有对应的处理。
+
+4.RIL上报CALL_STATE_CHANGED
+./radio_gsm_mt.log:2794:09-27 15:14:07.412  2249  2312 D RILJ    : Unsol response received for UNSOL_RESPONSE_CALL_STATE_CHANGED Sending ack to ril.cpp [SUB1]
+./radio_gsm_mt.log:2795:09-27 15:14:07.412  2249  2312 D RILJ    : [UNSL]< UNSOL_RESPONSE_CALL_STATE_CHANGED [SUB1]
+首先确认GsmCdmaCallTracker是在哪里初始化的，是在GsmCdmaPhone初始化方法initOnce()中完成：
+mCT = mTelephonyComponentFactory.makeGsmCdmaCallTracker(this);
+public GsmCdmaCallTracker (GsmCdmaPhone phone) {
+        this.mPhone = phone;
+        mCi = phone.mCi;
+        mCi.registerForCallStateChanged(this, EVENT_CALL_STATE_CHANGE, null);
+        mCi.registerForOn(this, EVENT_RADIO_AVAILABLE, null);
+        mCi.registerForNotAvailable(this, EVENT_RADIO_NOT_AVAILABLE, null);
+
+        // Register receiver for ECM exit
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TelephonyIntents.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED);
+        mPhone.getContext().registerReceiver(mEcmExitReceiver, filter);
+
+        updatePhoneType(true);
+    }
+注册了registerForCallStateChanged()方法，因此在RIL收到UNSOL_RESPONSE_CALL_STATE_CHANGED消息时，通过
+case RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED:
+                if (RILJ_LOGD) unsljLog(response);
+
+                mCallStateRegistrants
+                    .notifyRegistrants(new AsyncResult(null, null, null))
+通知GsmCdmaCallTracker，在GsmCdmaCallTracker 处理消息 case EVENT_CALL_STATE_CHANGE:
+                pollCallsWhenSafe();
+            break;
+pollCallsWhenSafe方法：
+protected void pollCallsWhenSafe() {
+        mNeedsPoll = true;
+
+        if (checkNoOperationsPending()) {
+            mLastRelevantPoll = obtainMessage(EVENT_POLL_CALLS_RESULT);
+            mCi.getCurrentCalls(mLastRelevantPoll);
+        }
+    }
+5.由4，收到CALL_STATE_CHANGED消息，主动发起getCurrentCalls(),调用RIL：
+@Override
+    public void
+    getCurrentCalls (Message result) {
+        RILRequest rr = RILRequest.obtain(RIL_REQUEST_GET_CURRENT_CALLS, result);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
+
+        send(rr);
+    }
+log:
+./radio_gsm_mt.log:2796:09-27 15:14:07.413  2249  2249 D RILJ    : [4507]> GET_CURRENT_CALLS [SUB1]
+
+./radio_gsm_mt.log:2797:09-27 15:14:07.420   939  1023 I RILQ    : (1/939):RIL[1][event] qcril_qmi_voice_all_call_status_ind_hdlr: call state INCOMING for conn id 1
+./radio_gsm_mt.log:2798:09-27 15:14:07.423   939   989 I RILQ    : (1/939):RIL[1][main] qcril_qmi_get_call_list_to_send: RILVI: calls rep:[qmi call id 1, android call id 1, qmi call state 2] reported/skipped 1/0 calls
+2804:09-27 15:14:07.427  2249  2312 D RILJ    : [4507]< GET_CURRENT_CALLS {[id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3] } [SUB1]
+
+
+6,GsmCdmaCallTracker处理EVENT_POLL_CALLS_RESULT消息：
+log:
+2805:09-27 15:14:07.431  2249  2249 D GsmCdmaCallTracker: Event EVENT_POLL_CALLS_RESULT Received
+代码:
+case EVENT_POLL_CALLS_RESULT:
+                Rlog.d(LOG_TAG, "Event EVENT_POLL_CALLS_RESULT Received");
+
+                if (msg == mLastRelevantPoll) {
+                    if (DBG_POLL) log(
+                            "handle EVENT_POLL_CALL_RESULT: set needsPoll=F");
+                    mNeedsPoll = false;
+                    mLastRelevantPoll = null;
+                    handlePollCalls((AsyncResult)msg.obj);
+                }
+            break;
+7.handlePollCalls()方法：
+log:
+2821:09-27 15:14:07.446  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] pendingMo=null, dc=id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3
+2826:09-27 15:14:07.456  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] Notify new ring id=1,INCOMING,toa=129,norm,mt,0,voc,noevp,,cli=1,,3
+2827:09-27 15:14:07.456  2249  2249 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=IDLE new=RINGING
+protected synchronized void handlePollCalls(AsyncResult ar) {
+      ………………………………
+     if (newRinging != null) {          // 新来电通知
+        mPhone.notifyNewRingingConnection(newRinging);
+     }
+       ………………………………
+    updatePhoneState();                // 更新phone状态
+       ………………………………
+  if (hasNonHangupStateChanged || newRinging != null || hasAnyCallDisconnected)           {
+      mPhone.notifyPreciseCallStateChanged();  // 发出call状态变化通知
+
+   }
+}
+7.1Phone.notifyNewRingingConnection(newRinging);
+log:
+10-11 17:56:08.115  3389  3389 D Telephony: PstnIncomingCallNotifier: handleNewRingingConnection
+10-11 17:56:08.142  1774  9923 V Telecom : Logging: START_SESSION: TSI.aNIC@APE
+10-11 17:56:08.144  1774  9923 I Telecom : : Adding new incoming call with phoneAccountHandle ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, [da4b9237bacccdf19c0760cab7aec4a8359010b0], UserHandle{0}: TSI.aNIC@APE
+
+该事件的监听对象PstnIncomingCallNotifier:
+private void registerForNotifications() {
+        if (mPhone != null) {
+            Log.i(this, "Registering: %s", mPhone);
+            mPhone.registerForNewRingingConnection(mHandler, EVENT_NEW_RINGING_CONNECTION, null);
+            mPhone.registerForCallWaiting(mHandler, EVENT_CDMA_CALL_WAITING, null);
+            mPhone.registerForUnknownConnection(mHandler, EVENT_UNKNOWN_CONNECTION, null);
+        }
+    }
+PstnIncomingCallNotifier初始化在TelecomAccountRegistry：
+mIncomingCallNotifier = new PstnIncomingCallNotifier((Phone) mPhone);
+
+EVENT_NEW_RINGING_CONNECTION事件的处理sendIncomingCallIntent方法：
+    private void sendIncomingCallIntent(Connection connection) {
+        Bundle extras = new Bundle();
+        if (connection.getNumberPresentation() == TelecomManager.PRESENTATION_ALLOWED &&
+                !TextUtils.isEmpty(connection.getAddress())) {
+            Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, connection.getAddress(), null);
+            extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
+        }
+
+        // Specifies the time the call was added. This is used by the dialer for analytics.
+        extras.putLong(TelecomManager.EXTRA_CALL_CREATED_TIME_MILLIS,
+                SystemClock.elapsedRealtime());
+
+        PhoneAccountHandle handle = findCorrectPhoneAccountHandle();
+        if (handle == null) {
+            try {
+                connection.hangup();
+            } catch (CallStateException e) {
+                // connection already disconnected. Do nothing
+            }
+        } else {
+            TelecomManager.from(mPhone.getContext()).addNewIncomingCall(handle, extras);
+        }
+    }
+addNewIncomingCall实现在TelecomServiceImpl.addNewIncomingCall()：
+mCallIntentProcessorAdapter.processIncomingCallIntent(
+                                    mCallsManager, intent);
+调用CallIntentProcessor的processIncomingCallIntent()方法，然后调用CallsManager的processIncomingCallIntent，log如下：
+
+10-11 17:56:08.172  1774  9923 D Telecom : Class: Processing incoming call from connection service [ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}]: TSI.aNIC@APE
+10-11 17:56:08.173  1774  9923 D Telecom : CallsManager: processIncomingCallIntent: TSI.aNIC@APE
+
+processIncomingCallIntent方法创建了一个call对象，然后调用startCreateConnection创建连接：
+void processIncomingCallIntent(PhoneAccountHandle phoneAccountHandle, Bundle extras) {
+        Log.d(this, "processIncomingCallIntent");
+        Uri handle = extras.getParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS);
+        if (handle == null) {
+            // Required for backwards compatibility
+            handle = extras.getParcelable(TelephonyManager.EXTRA_INCOMING_NUMBER);
+        }
+        Call call = new Call(
+                getNextCallId(),
+                mContext,
+                this,
+                mLock,
+                mConnectionServiceRepository,
+                mContactsAsyncHelper,
+                mCallerInfoAsyncQueryFactory,
+                mPhoneNumberUtilsAdapter,
+                handle,
+                null /* gatewayInfo */,
+                null /* connectionManagerPhoneAccount */,
+                phoneAccountHandle,
+                Call.CALL_DIRECTION_INCOMING /* callDirection */,
+                false /* forceAttachToExistingConnection */,
+                false /* isConference */
+        );
+
+        call.initAnalytics();
+        if (getForegroundCall() != null) {
+            getForegroundCall().getAnalytics().setCallIsInterrupted(true);
+            call.getAnalytics().setCallIsAdditional(true);
+        }
+
+        setIntentExtrasAndStartTime(call, extras);
+        // TODO: Move this to be a part of addCall()
+        call.addListener(this);
+        call.startCreateConnection(mPhoneAccountRegistrar);
+    }
+
+7.2接7 updatePhoneState()方法：
+log:
+10-11 17:56:08.103  3389  3389 D GsmCdmaCallTracker: [GsmCdmaCallTracker] handlePollCalls calling updatePhoneState()
+10-11 17:56:08.103  3389  3389 D GsmCdmaCallTracker: [GsmCdmaCallTracker] update phone state, old=IDLE new=RINGING
+7.3
+
